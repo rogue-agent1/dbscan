@@ -1,30 +1,27 @@
 #!/usr/bin/env python3
-"""DBSCAN density-based clustering."""
-import sys, math, random
-random.seed(42)
-def dist(a,b): return math.hypot(a[0]-b[0],a[1]-b[1])
-def dbscan(pts,eps,min_pts):
-    labels=[-1]*len(pts); c=0
-    for i in range(len(pts)):
-        if labels[i]!=-1: continue
-        neighbors=[j for j in range(len(pts)) if dist(pts[i],pts[j])<=eps]
-        if len(neighbors)<min_pts: continue
-        labels[i]=c; seed=list(neighbors)
+"""dbscan - DBSCAN density-based clustering."""
+import sys,math,random
+def dist(a,b):return math.sqrt(sum((x-y)**2 for x,y in zip(a,b)))
+def region_query(data,p,eps):return[i for i,q in enumerate(data) if dist(data[p],q)<=eps]
+def dbscan(data,eps=1.0,min_pts=5):
+    n=len(data);labels=[-1]*n;cluster=-1
+    for i in range(n):
+        if labels[i]!=-1:continue
+        neighbors=region_query(data,i,eps)
+        if len(neighbors)<min_pts:labels[i]=-2;continue
+        cluster+=1;labels[i]=cluster;seed=list(neighbors)
         while seed:
             q=seed.pop()
-            if labels[q]==-1 or labels[q]==-2: labels[q]=c
-            if labels[q]!=-1 and labels[q]!=c: continue
-            qn=[j for j in range(len(pts)) if dist(pts[q],pts[j])<=eps]
-            if len(qn)>=min_pts: seed+=qn
-        c+=1
+            if labels[q]==-2:labels[q]=cluster
+            if labels[q]!=-1:continue
+            labels[q]=cluster;qn=region_query(data,q,eps)
+            if len(qn)>=min_pts:seed.extend(qn)
     return labels
-pts=[(random.gauss(0,1),random.gauss(0,1)) for _ in range(20)]
-pts+=[(random.gauss(5,1),random.gauss(5,1)) for _ in range(20)]
-pts+=[(random.gauss(10,0.5),random.gauss(0,0.5)) for _ in range(10)]
-labels=dbscan(pts,2,3)
-clusters=max(labels)+1; noise=labels.count(-1)
-print(f"DBSCAN: {clusters} clusters, {noise} noise points")
-for c in range(clusters):
-    members=[pts[i] for i in range(len(pts)) if labels[i]==c]
-    cx=sum(p[0] for p in members)/len(members); cy=sum(p[1] for p in members)/len(members)
-    print(f"  Cluster {c}: {len(members)} points, center=({cx:.1f},{cy:.1f})")
+if __name__=="__main__":
+    random.seed(42);data=[]
+    for cx,cy in[(0,0),(6,6),(12,0)]:data.extend([(cx+random.gauss(0,1),cy+random.gauss(0,1)) for _ in range(30)])
+    data.extend([(random.uniform(-5,17),random.uniform(-5,11)) for _ in range(10)])
+    labels=dbscan(data,eps=2.0,min_pts=3)
+    clusters=set(l for l in labels if l>=0);noise=sum(1 for l in labels if l<0)
+    print(f"Points: {len(data)}, Clusters: {len(clusters)}, Noise: {noise}")
+    for c in sorted(clusters):pts=sum(1 for l in labels if l==c);print(f"  Cluster {c}: {pts} points")
