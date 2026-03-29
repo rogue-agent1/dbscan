@@ -1,11 +1,13 @@
-# dbscan
+# DBSCAN Clustering
 
-DBSCAN density-based clustering.""".
-
-Zero dependencies. Python 3.8+.
+DBSCAN Clustering — zero-dependency, single-file Python CLI.
 
 ## Usage
 
 ```bash
 python3 dbscan.py --help
 ```
+
+## License
+
+MIT
